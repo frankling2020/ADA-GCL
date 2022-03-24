@@ -56,8 +56,8 @@ def train(encoder_model, dataloader, optimizer, tau=0.2, alpha=1, reg=0, device=
         t2 = encoder_model.mlp(g2)
         
         g_copy = g.detach()
-        t3 = encoder_model.aug_mlp(g - gs_ad[0])
-        t4 = encoder_model.aug_mlp(g - gs_ad[1])
+        t3 = encoder_model.aug_mlp(g_copy - gs_ad[0])
+        t4 = encoder_model.aug_mlp(g_copy - gs_ad[1])
 
         loss = encoder_model.loss(t1, t2) - alpha * (encoder_model.loss(t3, t4)) + reg * encoder_model.reg_loss()
         loss.backward()
