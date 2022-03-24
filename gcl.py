@@ -6,6 +6,7 @@ from torch_geometric.datasets import TUDataset
 import torch_scatter
 
 from utils import get_split, LREvaluator
+from utils import feature_drop_weights, drop_feature_weighted, drop_edge_weighted
 
 from tqdm import tqdm
 from torch.optim import Adam
@@ -18,7 +19,7 @@ from model import ADA
 
 
 
-def train(encoder_model, dataloader, optimizer, alpha=0.5, reg=0, device='cpu'):
+def train(encoder_model, dataloader, optimizer, tau=0.2, alpha=1, reg=0, device='cpu'):
     encoder_model.train()
     epoch_loss = 0
     for data in dataloader:
@@ -32,15 +33,20 @@ def train(encoder_model, dataloader, optimizer, alpha=0.5, reg=0, device='cpu'):
         x, edge_index, batch = data.x, data.edge_index, data.batch
         z, g = encoder_model(x, edge_index, batch)
 
-        weights = encoder_model.edge_weight(z=z, edge_index=edge_index, device=device)
+        edge_weights, node_feat_weights = encoder_model.edge_weight(z=z, edge_index=edge_index)
 
         gs = []
         gs_ad = []
-        for drop_rate in torch.tensor([.6, .8], dtype=torch.float):
+        for drop_rate in torch.tensor([.3, .4], dtype=torch.float):
             edge = edge_index.clone()
-            edge = encoder_model.drop_edge_weighted(edge, weights, threshold=drop_rate)
-            _, g_aug = encoder_model.encoder(x, edge, batch)
-            _, g_ad = encoder_model.augment_encoder(x, edge, batch)
+            edge_prob = feature_drop_weights(edge_weights, tau)
+            feat_prob = feature_drop_weights(node_feat_weights, tau)
+            
+            x_aug = drop_feature_weighted(x, feat_prob, drop_rate)
+            edge = drop_edge_weighted(edge, edge_prob, drop_rate)
+            
+            _, g_aug = encoder_model.encoder(x_aug, edge, batch)
+            _, g_ad = encoder_model.augment_encoder(x_aug, edge, batch)
             gs.append(g_aug)
             gs_ad.append(g_ad)
 
@@ -50,10 +56,10 @@ def train(encoder_model, dataloader, optimizer, alpha=0.5, reg=0, device='cpu'):
         t2 = encoder_model.mlp(g2)
         
         g_copy = g.detach()
-        t3 = encoder_model.aug_mlp(g_copy - gs_ad[0])
-        t4 = encoder_model.aug_mlp(g_copy - gs_ad[1])
+        t3 = encoder_model.aug_mlp(g - gs_ad[0])
+        t4 = encoder_model.aug_mlp(g - gs_ad[1])
 
-        loss = encoder_model.loss(t1, t2) - (encoder_model.loss(t3, t4)) + reg * encoder_model.reg_loss()
+        loss = encoder_model.loss(t1, t2) - alpha * (encoder_model.loss(t3, t4)) + reg * encoder_model.reg_loss()
         loss.backward()
         optimizer.step()
 
@@ -110,7 +116,7 @@ def run(args):
     f.write(f'{batch_size} batch-sized {datasets_name} before training test F1Mi={test_result["test"]:.3f}, valid F1Ma={test_result["valid"]:.3f}')
     with tqdm(total=epochs, desc='(T)') as pbar:
         for _ in range(1, 1+epochs):
-            loss = train(encoder_model, dataloader, optimizer, alpha, reg, device)
+            loss = train(encoder_model, dataloader, optimizer, args.tau, alpha, reg, device)
             losses.append(loss)
             pbar.set_postfix({'loss': loss})
             pbar.update()

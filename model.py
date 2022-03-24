@@ -1,16 +1,9 @@
 import math
 import torch
 import torch.nn as nn
-from torch_geometric.nn import GINConv, global_add_pool
+from torch_geometric.nn import global_add_pool
 import torch.nn.functional as F
-from utils import degree_measure
-
-def make_gin_conv(in_dims, out_dims):
-    return GINConv(
-            nn.Sequential(nn.Linear(in_dims, out_dims), nn.ReLU(), nn.Linear(out_dims, out_dims)),
-            eps=0,
-            train_eps=False,
-        )
+from utils import degree_measure, make_gin_conv
 
 class GConv(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_layers):
@@ -85,6 +78,8 @@ class ADA(nn.Module):
         self.Q = nn.Linear(self.proj_heads+1, hidden_dims)
         self.K = nn.Linear(self.proj_heads+1, hidden_dims)
         self.V = nn.Linear(hidden_dims, hidden_dims)
+        
+        self.N = nn.Linear(self.proj_heads+1, hidden_dims)
 
         self.mlp = nn.Sequential(nn.Linear(self.proj_heads, self.proj_heads), nn.ReLU(), nn.Linear(self.proj_heads, hidden_dims))
         self.aug_mlp = nn.Sequential(nn.Linear(self.proj_heads, self.proj_heads), nn.ReLU(), nn.Linear(self.proj_heads, hidden_dims))
@@ -95,7 +90,7 @@ class ADA(nn.Module):
             if params.requires_grad and len(params.shape) > 1:
                 nn.init.xavier_normal_(params)
 
-    def edge_weight(self, z, edge_index, bias=1e-4, device='cpu'):
+    def edge_weight(self, z, edge_index):
         src, dst = edge_index[0], edge_index[1]
         degree_weights = degree_measure(edge_index).unsqueeze(1)
         src_embedding = torch.cat([z[src], degree_weights[src]], dim=1)
@@ -107,17 +102,10 @@ class ADA(nn.Module):
         edge_weight = src_q + dst_k
         edge_weight = edge_weight / math.sqrt(edge_weight.shape[1])
 
-        edge_weight = self.V(torch.tanh(edge_weight))
+        edge_weight = self.V(torch.tanh(edge_weight)).mean(dim=1)
+        node_feat_weight = (self.N(dst_embedding) / math.sqrt(self.hidden_dims)).mean()
 
-        eps = (2 * bias - 1) * torch.rand(edge_weight.size()) + (1 - bias)
-        gate_inputs = torch.log(eps) - torch.log(1 - eps)
-        gate_inputs = gate_inputs.to(device)
-        gate_inputs = (gate_inputs + edge_weight) / self.tau
-        edge_weight = torch.sigmoid(gate_inputs).squeeze()
-        
-
-
-        return edge_weight
+        return edge_weight, node_feat_weight
 
     def drop_edge_weighted(self, edge_index, edge_weights, threshold: float = 0.7):
         edge_weights = (edge_weights.max() - edge_weights)/(edge_weights.max() - edge_weights.mean())

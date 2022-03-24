@@ -1,5 +1,6 @@
 import torch
 from torch_geometric.utils import degree
+from torch_geometric.nn import GINConv
 import torch
 from tqdm import tqdm
 from torch import nn
@@ -7,12 +8,54 @@ from torch.optim import Adam
 from sklearn.metrics import f1_score
 from abc import ABC, abstractmethod
 
+
+def make_gin_conv(in_dims, out_dims):
+    return GINConv(
+            nn.Sequential(nn.Linear(in_dims, out_dims), nn.ReLU(), nn.Linear(out_dims, out_dims)),
+            eps=0,
+            train_eps=False,
+        )
+
+
 def degree_measure(edge_index):
     deg = degree(edge_index[1])
     deg_col = deg[edge_index[1]].to(torch.float)
     s_col = torch.log(deg_col)
     weights = (s_col.max() - s_col) / (s_col.max() - s_col.mean())
     return weights
+
+def drop_edge_weighted(edge_index, edge_weights, p: float, threshold: float = 1.):
+    edge_weights = edge_weights / edge_weights.mean() * p
+    edge_weights = edge_weights.where(edge_weights < threshold, torch.ones_like(edge_weights) * threshold)
+    sel_mask = torch.bernoulli(1. - edge_weights).to(torch.bool)
+    
+    return edge_index[:, sel_mask]
+
+def drop_feature_weighted(x, w, p: float, threshold: float = 0.7):
+    w = w / w.mean() * p
+    w = w.where(w < threshold, torch.ones_like(w) * threshold)
+    drop_prob = w
+
+    drop_mask = torch.bernoulli(drop_prob).to(torch.bool)
+
+    x = x.clone()
+    x[:, drop_mask] = 0.
+
+    return x
+
+def feature_drop_weights(node_c, tau=0.2, bias=1e-4, device='cpu'):
+    # x = x.to(torch.bool).to(torch.float32)
+    # w = x.t() @ node_c
+    # w = w.log()
+    node_eps = (2 * bias - 1) * torch.rand(node_c.size()) + (1 - bias)
+
+    w = torch.log(node_eps/(1-node_eps))
+    w = w.to(device)
+    w = (w + node_c) / tau
+
+    s = (w.max() - w) / (w.max() - w.mean())
+
+    return s
 
 def get_split(num_samples: int, train_ratio: float = 0.1, test_ratio: float = 0.8):
     assert train_ratio + test_ratio < 1
@@ -24,7 +67,6 @@ def get_split(num_samples: int, train_ratio: float = 0.1, test_ratio: float = 0.
         'valid': indices[train_size: test_size + train_size],
         'test': indices[test_size + train_size:]
     }
-
 
 class BaseEvaluator(ABC):
     @abstractmethod
