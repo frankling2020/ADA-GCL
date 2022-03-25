@@ -167,3 +167,7 @@ class ADA(nn.Module):
         for params in self.parameters():
             total += params.nelement()
         return total
+    
+    def encoder_update(self, inverse_momentum=1e-3):
+        for param, aug_param in zip(self.encoder.parameters(), self.augment_encoder.parameters()):
+            aug_param = (1- inverse_momentum) * aug_param + inverse_momentum * param.clone().detach()

@@ -89,9 +89,15 @@ class LogisticRegression(nn.Module):
     def forward(self, x):
         z = self.fc(x)
         return z
+    
+    def reg_loss(self, reg):
+        if reg == 0:
+            return 0
+        else:
+            return reg * torch.mean(self.fc.weight.data**2)
 
 class LREvaluator(BaseEvaluator):
-    def __init__(self, num_epochs: int = 5000, learning_rate: float = 0.01,
+    def __init__(self, num_epochs: int = 1000, learning_rate: float = 0.01,
                  weight_decay: float = 0.0, test_interval: int = 20):
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
@@ -119,7 +125,7 @@ class LREvaluator(BaseEvaluator):
                 optimizer.zero_grad()
 
                 output = classifier(x[split['train']])
-                loss = criterion(output_fn(output), y[split['train']])
+                loss = criterion(output_fn(output), y[split['train']]) + classifier.reg_loss(reg=0)
 
                 loss.backward()
                 optimizer.step()
@@ -129,7 +135,6 @@ class LREvaluator(BaseEvaluator):
                     y_test = y[split['test']].detach().cpu().numpy()
                     y_pred = classifier(x[split['test']]).argmax(-1).detach().cpu().numpy()
                     test_micro = f1_score(y_test, y_pred, average='micro')
-                    test_macro = f1_score(y_test, y_pred, average='macro')
 
                     y_val = y[split['valid']].detach().cpu().numpy()
                     y_pred = classifier(x[split['valid']]).argmax(-1).detach().cpu().numpy()

@@ -1,0 +1,20 @@
+256 batch-sized PROTEINS before training test F1Mi=0.768, valid F1Ma=0.775 256 batch-sized PROTEINS with Best F1Mi(accuracy)=0.759, valid F1Ma=0.730 
+
+256 batch-sized PROTEINS before training test F1Mi=0.732, valid F1Ma=0.766 256 batch-sized PROTEINS with Best F1Mi(accuracy)=0.786, valid F1Ma=0.784 
+
+256 batch-sized PROTEINS before training test F1Mi=0.786, valid F1Ma=0.739 256 batch-sized PROTEINS with Best F1Mi(accuracy)=0.768, valid F1Ma=0.802 
+
+256 batch-sized PROTEINS before training test F1Mi=0.750, valid F1Ma=0.784 256 batch-sized PROTEINS with Best F1Mi(accuracy)=0.714, valid F1Ma=0.829 
+
+256 batch-sized PROTEINS before training test F1Mi=0.741, valid F1Ma=0.793 256 batch-sized PROTEINS with Best F1Mi(accuracy)=0.732, valid F1Ma=0.748 
+
+256 batch-sized NCI1 before training test F1Mi=0.703, valid F1Ma=0.737 256 batch-sized NCI1 with Best F1Mi(accuracy)=0.701, valid F1Ma=0.730 
+
+256 batch-sized NCI1 before training test F1Mi=0.740, valid F1Ma=0.698 256 batch-sized NCI1 with Best F1Mi(accuracy)=0.742, valid F1Ma=0.723 
+
+256 batch-sized NCI1 before training test F1Mi=0.703, valid F1Ma=0.757 256 batch-sized NCI1 with Best F1Mi(accuracy)=0.727, valid F1Ma=0.742 
+
+256 batch-sized NCI1 before training test F1Mi=0.723, valid F1Ma=0.798 256 batch-sized NCI1 with Best F1Mi(accuracy)=0.710, valid F1Ma=0.703 
+
+256 batch-sized NCI1 before training test F1Mi=0.720, valid F1Ma=0.745 256 batch-sized NCI1 with Best F1Mi(accuracy)=0.708, valid F1Ma=0.771 
+

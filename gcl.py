@@ -1,7 +1,9 @@
 import torch
 from torch.optim import Adam
+import torch_geometric
 
 from torch_geometric.loader import DataLoader
+from torch_geometric import transforms
 from torch_geometric.datasets import TUDataset
 import torch_scatter
 
@@ -10,6 +12,7 @@ from utils import feature_drop_weights, drop_feature_weighted, drop_edge_weighte
 
 from tqdm import tqdm
 from torch.optim import Adam
+
 
 import matplotlib.pyplot as plt
 import os.path as osp
@@ -31,22 +34,23 @@ def train(encoder_model, dataloader, optimizer, tau=0.2, alpha=1, reg=0, device=
             data.x = torch.ones((num_nodes, 1), dtype=torch.float, device=data.batch.device)
         
         x, edge_index, batch = data.x, data.edge_index, data.batch
-        z, g = encoder_model(x, edge_index, batch)
+        z, _ = encoder_model(x, edge_index, batch)
 
-        edge_weights, node_feat_weights = encoder_model.edge_weight(z=z, edge_index=edge_index)
+        edge_weights, node_feat_weights = encoder_model.edge_weight(z=z.clone().detach(), edge_index=edge_index)
 
         gs = []
         gs_ad = []
         for drop_rate in torch.tensor([.3, .4], dtype=torch.float):
             edge = edge_index.clone()
-            edge_prob = feature_drop_weights(edge_weights, tau)
-            feat_prob = feature_drop_weights(node_feat_weights, tau)
+            edge_prob = feature_drop_weights(edge_weights, tau, device=device)
+            # feat_prob = feature_drop_weights(node_feat_weights, tau, device=device)
             
-            x_aug = drop_feature_weighted(x, feat_prob, drop_rate)
+            # x_aug = drop_feature_weighted(x, feat_prob, 0.1)
             edge = drop_edge_weighted(edge, edge_prob, drop_rate)
             
-            _, g_aug = encoder_model.encoder(x_aug, edge, batch)
-            _, g_ad = encoder_model.augment_encoder(x_aug, edge, batch)
+            _, g_aug = encoder_model.encoder(x, edge, batch)
+            encoder_model.encoder_update()
+            _, g_ad = encoder_model.augment_encoder(x, edge, batch)
             gs.append(g_aug)
             gs_ad.append(g_ad)
 
@@ -55,9 +59,8 @@ def train(encoder_model, dataloader, optimizer, tau=0.2, alpha=1, reg=0, device=
         t1 = encoder_model.mlp(g1)
         t2 = encoder_model.mlp(g2)
         
-        g_copy = g.detach()
-        t3 = encoder_model.aug_mlp(g_copy - gs_ad[0])
-        t4 = encoder_model.aug_mlp(g_copy - gs_ad[1])
+        t3 = encoder_model.aug_mlp(gs_ad[0])
+        t4 = encoder_model.aug_mlp(gs_ad[1])
 
         loss = encoder_model.loss(t1, t2) - alpha * (encoder_model.loss(t3, t4)) + reg * encoder_model.reg_loss()
         loss.backward()
@@ -97,6 +100,7 @@ def run(args):
     batch_size = args.batch_size
     device = torch.device(args.device)
     path = osp.join(osp.expanduser('.'), 'datasets')
+    # transform = transforms.Compose([transforms.RemoveIsolatedNodes(), transforms.TargetIndegree()])
     dataset = TUDataset(path, name=datasets_name)
     dataloader = DataLoader(dataset, batch_size=batch_size)
     input_dim = max(dataset.num_features, 1)
@@ -146,14 +150,14 @@ def arg_parser():
     parser.add_argument('--batch_size', type=int, default=256, help="Batch Size")
     parser.add_argument('--hidden_dims', type=int, default=32, help="hidden dims")
     parser.add_argument('--num_layers', type=int, default=2, help="num of layers")
-    parser.add_argument('--device', type=str, default='cpu', help='Device for training')
+    parser.add_argument('--device', type=str, default='cuda', help='Device for training')
     parser.add_argument('--lr', type=float, default=1e-2, help="Learning rate")
     parser.add_argument('--weight_decay', type=float, default=1e-3, help="Weight decay for Adam")
     parser.add_argument('--epochs', type=int, default=100, help='Epochs')
-    parser.add_argument('--alpha', type=float, default=0.1, help='adversarial attack weight')
+    parser.add_argument('--alpha', type=float, default=1.0, help='adversarial attack weight')
     parser.add_argument('--tau', type=float, default=0.2, help='Temperature')
     parser.add_argument('--reg', type=float, default=1e-4, help='L2 regularization')
-    parser.add_argument('--log', type=str, default='log.txt', help='Record the training results')
+    parser.add_argument('--log', type=str, default='log_test.txt', help='Record the training results')
     return parser.parse_args()
 
 

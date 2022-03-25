@@ -18,3 +18,43 @@
 
 256 batch-sized MUTAG before training test F1Mi=0.850, valid F1Ma=0.944 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.850, valid F1Ma=0.944 
 
+256 batch-sized MUTAG before training test F1Mi=0.750, valid F1Ma=0.889256 batch-sized MUTAG before training test F1Mi=0.750, valid F1Ma=0.944 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.950, valid F1Ma=0.944 
+
+256 batch-sized MUTAG before training test F1Mi=0.800, valid F1Ma=0.944 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.900, valid F1Ma=0.944 
+
+256 batch-sized MUTAG before training test F1Mi=0.800, valid F1Ma=0.944 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.750, valid F1Ma=0.833 
+
+256 batch-sized MUTAG before training test F1Mi=0.600, valid F1Ma=0.778 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.800, valid F1Ma=1.000 
+
+256 batch-sized MUTAG before training test F1Mi=0.850, valid F1Ma=0.889 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.900, valid F1Ma=1.000 
+
+256 batch-sized MUTAG before training test F1Mi=0.850, valid F1Ma=0.889 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.850, valid F1Ma=0.944 
+
+256 batch-sized MUTAG before training test F1Mi=0.900, valid F1Ma=0.889 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.850, valid F1Ma=0.833 
+
+256 batch-sized MUTAG before training test F1Mi=0.950, valid F1Ma=0.889 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.650, valid F1Ma=0.944 
+
+256 batch-sized MUTAG before training test F1Mi=0.850, valid F1Ma=1.000 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.800, valid F1Ma=1.000 
+
+256 batch-sized MUTAG before training test F1Mi=0.950, valid F1Ma=1.000 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.750, valid F1Ma=0.833 
+
+256 batch-sized MUTAG before training test F1Mi=0.750, valid F1Ma=0.778 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.750, valid F1Ma=0.944 
+
+256 batch-sized MUTAG before training test F1Mi=0.800, valid F1Ma=0.889 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.900, valid F1Ma=0.944 
+
+256 batch-sized MUTAG before training test F1Mi=0.850, valid F1Ma=0.833 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.850, valid F1Ma=0.889 
+
+256 batch-sized MUTAG before training test F1Mi=0.850, valid F1Ma=1.000 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.900, valid F1Ma=0.889 
+
+256 batch-sized MUTAG before training test F1Mi=0.900, valid F1Ma=0.833 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.700, valid F1Ma=0.944 
+
+256 batch-sized MUTAG before training test F1Mi=0.750, valid F1Ma=0.944 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.850, valid F1Ma=0.944 
+
+256 batch-sized MUTAG before training test F1Mi=0.850, valid F1Ma=0.889 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.800, valid F1Ma=0.778 
+
+256 batch-sized MUTAG before training test F1Mi=0.850, valid F1Ma=0.889 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.850, valid F1Ma=0.833 
+
+256 batch-sized MUTAG before training test F1Mi=0.850, valid F1Ma=0.833 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.750, valid F1Ma=1.000 
+
+256 batch-sized MUTAG before training test F1Mi=0.900, valid F1Ma=0.889 256 batch-sized MUTAG with Best F1Mi(accuracy)=0.700, valid F1Ma=0.944 
+
