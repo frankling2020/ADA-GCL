@@ -8,9 +8,10 @@ from utils import degree_measure, make_gin_conv
 class GConv(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_layers):
         super(GConv, self).__init__()
+        
         self.layers = nn.ModuleList()
         self.batch_norms = nn.ModuleList()
-
+        
         for i in range(num_layers):
             if i == 0:
                 self.layers.append(make_gin_conv(input_dim, hidden_dim))
@@ -22,14 +23,8 @@ class GConv(nn.Module):
         self.project = torch.nn.Sequential(
             nn.Linear(project_dim, project_dim),
             nn.ReLU(inplace=True),
-            nn.Linear(project_dim, project_dim))
-
-    def reset_parameters(self):
-        for layer in self.project:
-            self.linear_reset(layer)
-        for conv in self.layers:
-            for layer in conv.nn:
-                self.linear_reset(layer)
+            nn.Linear(project_dim, project_dim)
+        )
 
     def forward(self, x, edge_index, batch):
         z = x
@@ -61,7 +56,7 @@ class ADA(nn.Module):
         3. resolve the loss up-and-down problems
         4. Updating the difficulty in the negative pairs: sampled neagative pairs inspired by MoCo and CuCo 
     """
-    def __init__(self, in_dims, hidden_dims, num_layers, tau=0.2, beta=1):
+    def __init__(self, in_dims, hidden_dims, num_layers, edge_dims=1, tau=0.2, beta=1):
         super(ADA, self).__init__()
 
         self.in_dims = in_dims
@@ -75,12 +70,12 @@ class ADA(nn.Module):
         self.encoder = GConv(in_dims, hidden_dims, num_layers)
         self.augment_encoder = GConv(in_dims, hidden_dims, num_layers)
         
-        self.Q = nn.Linear(self.proj_heads+1, hidden_dims)
-        self.K = nn.Linear(self.proj_heads+1, hidden_dims)
-        self.V = nn.Linear(hidden_dims, hidden_dims)
+        self.Q = nn.Linear(self.proj_heads+1, edge_dims)
+        self.K = nn.Linear(self.proj_heads+1, edge_dims)
+        self.V = nn.Linear(edge_dims, edge_dims)
         
-        self.N = nn.Linear(self.proj_heads+1, hidden_dims)
-
+        self.N = nn.Linear(self.proj_heads, in_dims)
+        
         self.mlp = nn.Sequential(nn.Linear(self.proj_heads, self.proj_heads), nn.ReLU(), nn.Linear(self.proj_heads, hidden_dims))
         self.aug_mlp = nn.Sequential(nn.Linear(self.proj_heads, self.proj_heads), nn.ReLU(), nn.Linear(self.proj_heads, hidden_dims))
         self.reset_parameters()
@@ -90,7 +85,7 @@ class ADA(nn.Module):
             if params.requires_grad and len(params.shape) > 1:
                 nn.init.xavier_normal_(params)
 
-    def edge_weight(self, z, edge_index):
+    def edge_weight(self, z, edge_index, edge_attr):
         src, dst = edge_index[0], edge_index[1]
         degree_weights = degree_measure(edge_index).unsqueeze(1)
         src_embedding = torch.cat([z[src], degree_weights[src]], dim=1)
@@ -98,12 +93,14 @@ class ADA(nn.Module):
         
         src_q = self.Q(src_embedding)
         dst_k = self.K(dst_embedding)
+        src_v = self.V(edge_attr)
         
-        edge_weight = src_q + dst_k
+        edge_weight = src_q @ dst_k.t()
         edge_weight = edge_weight / math.sqrt(edge_weight.shape[1])
+        edge_weight = (F.softmax(edge_weight, dim=1) @ src_v).mean(dim=1)
 
-        edge_weight = self.V(torch.tanh(edge_weight)).mean(dim=1)
-        node_feat_weight = (self.N(dst_embedding) / math.sqrt(self.hidden_dims)).mean()
+        # edge_weight = self.V(torch.tanh(edge_weight)).mean(dim=1)
+        node_feat_weight = (self.N(z) / math.sqrt(self.hidden_dims)).mean()
 
         return edge_weight, node_feat_weight
 

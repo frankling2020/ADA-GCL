@@ -125,7 +125,7 @@ class LREvaluator(BaseEvaluator):
                 optimizer.zero_grad()
 
                 output = classifier(x[split['train']])
-                loss = criterion(output_fn(output), y[split['train']]) + classifier.reg_loss(reg=0)
+                loss = criterion(output_fn(output), y[split['train']]) + classifier.reg_loss(reg=2e-3)
 
                 loss.backward()
                 optimizer.step()

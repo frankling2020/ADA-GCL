@@ -34,9 +34,15 @@ def train(encoder_model, dataloader, optimizer, tau=0.2, alpha=1, reg=0, device=
             data.x = torch.ones((num_nodes, 1), dtype=torch.float, device=data.batch.device)
         
         x, edge_index, batch = data.x, data.edge_index, data.batch
+        
+        if data.edge_attr is not None:
+            edge_attr = data.edge_attr
+        else:
+            edge_attr = torch.zeros(edge_index.shape[1], 1, device=device)
+            
         z, _ = encoder_model(x, edge_index, batch)
 
-        edge_weights, node_feat_weights = encoder_model.edge_weight(z=z.clone().detach(), edge_index=edge_index)
+        edge_weights, node_feat_weights = encoder_model.edge_weight(z=z.clone().detach(), edge_index=edge_index, edge_attr=edge_attr)
 
         gs = []
         gs_ad = []
@@ -80,6 +86,7 @@ def test(encoder_model, dataloader, device='cpu'):
         if data.x is None:
             num_nodes = data.batch.size(0)
             data.x = torch.ones((num_nodes, 1), dtype=torch.float, device=data.batch.device)
+            
         _, g = encoder_model(data.x, data.edge_index, data.batch)
         x.append(g)
         y.append(data.y)
@@ -104,9 +111,11 @@ def run(args):
     dataset = TUDataset(path, name=datasets_name)
     dataloader = DataLoader(dataset, batch_size=batch_size)
     input_dim = max(dataset.num_features, 1)
+    edge_dim = max(dataset.num_edge_features, 1)
 
+    print(edge_dim)
 
-    encoder_model = ADA(input_dim, args.hidden_dims, args.num_layers, tau=args.tau).to(device)
+    encoder_model = ADA(input_dim, args.hidden_dims, args.num_layers, edge_dims=edge_dim, tau=args.tau).to(device)
 
     optimizer = Adam(encoder_model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
@@ -146,8 +155,8 @@ def run(args):
 def arg_parser():
     parser = argparse.ArgumentParser(description='AD-AG-CL')
     parser.add_argument('--iter', type=int, default=5, help='Iteration')
-    parser.add_argument('--dataset', type=str, default='MUTAG', help='Dataset')
-    parser.add_argument('--batch_size', type=int, default=256, help="Batch Size")
+    parser.add_argument('--dataset', type=str, default='IMDB-BINARY', help='Dataset')
+    parser.add_argument('--batch_size', type=int, default=32, help="Batch Size")
     parser.add_argument('--hidden_dims', type=int, default=32, help="hidden dims")
     parser.add_argument('--num_layers', type=int, default=2, help="num of layers")
     parser.add_argument('--device', type=str, default='cuda', help='Device for training')
