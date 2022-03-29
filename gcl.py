@@ -22,6 +22,8 @@ from model import ADA
 
 
 
+
+
 def train(encoder_model, dataloader, optimizer, tau=0.2, alpha=1, reg=0, device='cpu'):
     encoder_model.train()
     epoch_loss = 0
