@@ -1,3 +1,4 @@
+from ctypes import DllGetClassObject
 import torch
 from torch.optim import Adam
 import torch_geometric
@@ -51,14 +52,14 @@ def train(encoder_model, dataloader, optimizer, tau=0.2, alpha=1, reg=0, device=
         for drop_rate in torch.tensor([.3, .4], dtype=torch.float):
             edge = edge_index.clone()
             edge_prob = feature_drop_weights(edge_weights, tau, device=device)
-            # feat_prob = feature_drop_weights(node_feat_weights, tau, device=device)
+            feat_prob = feature_drop_weights(node_feat_weights, tau, device=device)
             
-            # x_aug = drop_feature_weighted(x, feat_prob, 0.1)
+            x_aug = drop_feature_weighted(x, feat_prob, 0.1)
             edge = drop_edge_weighted(edge, edge_prob, drop_rate)
             
-            _, g_aug = encoder_model.encoder(x, edge, batch)
+            _, g_aug = encoder_model.encoder(x_aug, edge, batch)
             encoder_model.encoder_update()
-            _, g_ad = encoder_model.augment_encoder(x, edge, batch)
+            _, g_ad = encoder_model.augment_encoder(x_aug, edge, batch)
             gs.append(g_aug)
             gs_ad.append(g_ad)
 
@@ -70,7 +71,9 @@ def train(encoder_model, dataloader, optimizer, tau=0.2, alpha=1, reg=0, device=
         t3 = encoder_model.aug_mlp(gs_ad[0])
         t4 = encoder_model.aug_mlp(gs_ad[1])
 
-        loss = encoder_model.loss(t1, t2) - alpha * (encoder_model.loss(t3, t4)) + reg * encoder_model.reg_loss()
+
+        # information large loss small
+        loss = encoder_model.loss(t1, t2) - alpha * (encoder_model.loss(t3, t4, beta=0.0)) + reg * encoder_model.reg_loss()
         loss.backward()
         optimizer.step()
 
@@ -157,8 +160,8 @@ def run(args):
 def arg_parser():
     parser = argparse.ArgumentParser(description='AD-AG-CL')
     parser.add_argument('--iter', type=int, default=5, help='Iteration')
-    parser.add_argument('--dataset', type=str, default='IMDB-BINARY', help='Dataset')
-    parser.add_argument('--batch_size', type=int, default=32, help="Batch Size")
+    parser.add_argument('--dataset', type=str, default='PROTEINS', help='Dataset')
+    parser.add_argument('--batch_size', type=int, default=256, help="Batch Size")
     parser.add_argument('--hidden_dims', type=int, default=32, help="hidden dims")
     parser.add_argument('--num_layers', type=int, default=2, help="num of layers")
     parser.add_argument('--device', type=str, default='cuda', help='Device for training')
