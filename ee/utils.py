@@ -6,6 +6,17 @@ from torch_geometric.nn import GINConv
 
 from torch_scatter import scatter
 
+def grads_checker(model, verbose:bool=False):
+    for name, parms in model.named_parameters():
+        if parms.requires_grad:
+            if torch.all(parms.grad == 0):
+                print('-->name:', name)
+            if verbose:
+                print('-->grad:', parms.grad)
+            print("===")
+            
+
+
 def initialize(layer):
     if isinstance(layer, nn.Linear):
         nn.init.xavier_uniform_(layer.weight.data)

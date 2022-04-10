@@ -1,4 +1,5 @@
 import os.path as osp
+from pickletools import optimize
 from tqdm import tqdm
 
 import csv
@@ -6,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import torch
-from torch.optim import Adam
+from torch.optim import Adam, RAdam
 
 from torch_geometric.loader import DataLoader
 from torch_geometric.datasets import TUDataset
@@ -18,7 +19,6 @@ from test import test
 
 
 def run(args):
-    torch.cuda.empty_cache()
     datasets_name = args.dataset
     batch_size = args.batch_size
     device = torch.device(args.device)
@@ -36,6 +36,7 @@ def run(args):
     encoder_model = ADA(input_dim, args.hidden_dims, args.num_layers, edge_dims=args.edge_dims).to(device)
 
     optimizer = Adam(encoder_model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    # optimizer = RAdam(encoder_model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
 
 
@@ -96,7 +97,6 @@ def run(args):
     plt.savefig(f"./figures/result_{datasets_name}.jpg", dpi=300)
     plt.close()
     print("Plot!")
-
     torch.save(encoder_model, f"./model_params/encoder_mdl_{datasets_name}.pth")
     print("Save!")
 
@@ -138,6 +138,7 @@ if __name__ == '__main__':
             # np.max(valid_acc),
             np.mean(test_acc),
             np.std(test_acc),
+            np.min(test_acc),
             np.max(test_acc),
             np.mean(sorted(test_acc, reverse=True)[:5])
         ])

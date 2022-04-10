@@ -1,6 +1,6 @@
 import torch
 import seaborn as sns
-from utils import normalize
+from utils import grads_checker, normalize
 from loss import loss_fn
 
 def train(encoder_model, dataloader, optimizer, args):
@@ -43,16 +43,18 @@ def train(encoder_model, dataloader, optimizer, args):
         t2 = encoder_model.mlp(g2)
         
         g_normed = normalize(g)
-        g_flag = torch.where(g_normed > 0.1, 0, 1)
+        g_flag = torch.where(g_normed > 0.25, 0, 1)
         g1_pos = g_flag * g1.detach()
 
         t3 = g1_pos
         t4 = g2.detach()
         
-        loss = loss_fn(t1, t2) - alpha * loss_fn(t3,t4, beta=0.0) + reg * encoder_model.reg_loss()
+        loss = loss_fn(t1, t2) - alpha * loss_fn(t3, t4, beta=0.0) + reg * encoder_model.reg_loss()
 
         loss.backward()
         optimizer.step()
+
+        # grads_checker(encoder_model.attn_edge)
 
         epoch_loss += loss.item()
     return epoch_loss/epochs, None

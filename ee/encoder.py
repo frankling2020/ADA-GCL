@@ -33,8 +33,8 @@ class ADA(nn.Module):
         self.encoder = GConv(in_dims, hidden_dims, num_layers)
 
         # attention mechanism for learnable augmentation
-        self.attn_node = LearnableAttn(self.proj_heads, self.hidden_dims)
-        self.attn_edge = LearnableAttn(2*self.proj_heads, self.edge_dims, proj=False)
+        self.attn_node = LearnableAttn(self.proj_heads, self.hidden_dims, proj=False)
+        self.attn_edge = LearnableAttn(2*self.proj_heads, 2*self.proj_heads, proj=False)
         
         self.mlp = nn.Sequential(nn.Linear(self.proj_heads, self.proj_heads), nn.ReLU(), nn.Linear(self.proj_heads, hidden_dims))
 
@@ -57,7 +57,7 @@ class ADA(nn.Module):
         edge_attn = self.attn_edge(q_emb, k_emb, edge_pos)
         
         # node attention
-        node_attn = self.attn_node(z, g_emb, node_pos)
+        node_attn = self.attn_node(g_emb, z, node_pos)
 
         return edge_attn, node_attn
 

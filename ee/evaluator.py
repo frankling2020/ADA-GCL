@@ -35,16 +35,16 @@ def get_predefined_split(x_train, x_val, y_train, y_val, return_array=True):
     if return_array:
         x = np.concatenate([x_train, x_val], axis=0)
         y = np.concatenate([y_train, y_val], axis=0)
-        return ps, [x, y]
-    return ps
+        return ps, x, y
+    return ps, None, None
 
 
 class BaseEvaluator(ABC):
     @abstractmethod
-    def evaluate(self, x: torch.FloatTensor, y: torch.LongTensor, split: dict) -> dict:
+    def evaluate(self, x: torch.Tensor, y: torch.Tensor, split: dict) -> dict:
         pass
 
-    def __call__(self, x: torch.FloatTensor, y: torch.LongTensor, split: dict) -> dict:
+    def __call__(self, x: torch.Tensor, y: torch.Tensor, split: dict) -> dict:
         for key in ['train', 'test', 'valid']:
             assert key in split
 
@@ -60,7 +60,7 @@ class BaseSKLearnEvaluator(BaseEvaluator):
     def evaluate(self, x, y, split):
         x_train, x_test, x_val, y_train, y_test, y_val = split_to_numpy(
             x, y, split)
-        ps, [x_train, y_train] = get_predefined_split(x_train, x_val, y_train, y_val)
+        ps, x_train, y_train = get_predefined_split(x_train, x_val, y_train, y_val)
         classifier = GridSearchCV(
             self.evaluator, self.params, cv=ps, scoring='accuracy', verbose=0)
         classifier.fit(x_train, y_train)
@@ -109,7 +109,7 @@ class LREvaluator(BaseEvaluator):
         self.weight_decay = weight_decay
         self.test_interval = test_interval
 
-    def evaluate(self, x: torch.FloatTensor, y: torch.LongTensor, split: dict):
+    def evaluate(self, x: torch.Tensor, y: torch.Tensor, split: dict):
         device = x.device
         x = x.detach().to(device)
         input_dim = x.size()[1]

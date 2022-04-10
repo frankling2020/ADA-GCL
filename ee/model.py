@@ -33,8 +33,11 @@ class GConv(nn.Module):
 
     def reset_parameters(self):
         for params in self.parameters():
-            if params.requires_grad and params.ndim > 1:
-                nn.init.xavier_uniform_(params)
+            if params.requires_grad:
+                if params.ndim > 1:
+                    nn.init.xavier_uniform_(params)
+                else:
+                    params.data.fill_(0.0)
 
     def _no_grads(self):
         for params in self.parameters():

@@ -88,7 +88,7 @@ def batched_semi_loss(z1: torch.Tensor, z2: torch.Tensor, batch_size: int, beta:
     num_nodes = z1.size(0)
     num_batches = (num_nodes - 1) // batch_size + 1
     f = lambda x: torch.exp(x / tau)
-    indices = torch.arange(0, num_nodes).to(device)
+    indices = torch.arange(0, num_nodes, device=device)
     losses = []
     
     # this can be used to batched training

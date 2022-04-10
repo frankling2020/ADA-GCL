@@ -23,8 +23,8 @@ def drop_feature(x, w, p: float = 0.7):
     return x
 
 
-def drop_node(edge_index: torch.Tensor, node_attn:torch.Tensor = None, keep_prob: float = 0.5):
-    num_nodes = edge_index.max().item() + 1
+def drop_node(edge_index: torch.Tensor, node_attn:torch.Tensor, keep_prob: float = 0.5):
+    num_nodes = int(edge_index.max().item()) + 1
     probs = torch.tensor([keep_prob for _ in range(num_nodes)])
     dist = torch.distributions.Bernoulli(probs)
 
